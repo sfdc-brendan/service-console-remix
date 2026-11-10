@@ -350,6 +350,22 @@ html body {
   grid-column: span 2;
   min-width: 0;
 }
+.layout-slot[data-height='short'] {
+  --panel-h: 18rem;
+}
+.layout-slot[data-height='medium'] {
+  --panel-h: 28rem;
+}
+.layout-slot[data-height='tall'] {
+  --panel-h: 42rem;
+}
+.layout-slot[data-height]:not([data-height='auto']) .panel-frame {
+  max-height: var(--panel-h);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 1rem;
+  scrollbar-width: thin;
+}
 @container (min-width: 40rem) {
   .layout-slot[data-span='half'] {
     grid-column: span 1;

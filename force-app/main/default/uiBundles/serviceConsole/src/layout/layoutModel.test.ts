@@ -3,12 +3,41 @@ import {
   buildDefault,
   nudgeHeaderStat,
   normalizeLayout,
+  prefsFor,
   setHeaderField,
+  setPanelPrefs,
   toggleHeaderStat,
 } from './layoutModel';
 import { CASE_LAYOUT, HOME_LAYOUT } from './pageSpecs';
 
 const DEFAULT_STATS = ['closedToday', 'avgHandle', 'openCases', 'inQueue'];
+
+describe('panel height', () => {
+  it('defaults to fit content and keeps only known heights', () => {
+    expect(prefsFor(buildDefault(CASE_LAYOUT), 'feed').height).toBe('auto');
+    const layout = normalizeLayout(
+      {
+        regions: { main: ['feed', 'summary'] },
+        panels: { feed: { height: 'tall' }, summary: { height: 'huge' } },
+      },
+      CASE_LAYOUT
+    );
+    expect(prefsFor(layout, 'feed').height).toBe('tall');
+    expect(prefsFor(layout, 'summary').height).toBe('auto');
+  });
+
+  it('sets a height without touching the panel’s other prefs', () => {
+    const base = setPanelPrefs(buildDefault(CASE_LAYOUT), 'feed', {
+      span: 'half',
+    });
+    const next = setPanelPrefs(base, 'feed', { height: 'short' });
+    expect(prefsFor(next, 'feed')).toEqual({
+      collapsed: false,
+      span: 'half',
+      height: 'short',
+    });
+  });
+});
 
 describe('page header layout', () => {
   it('gives Home a default header and leaves pages without one alone', () => {

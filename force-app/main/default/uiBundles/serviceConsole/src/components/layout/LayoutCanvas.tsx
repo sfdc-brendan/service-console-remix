@@ -29,6 +29,7 @@ import {
   EyeOff,
   GripVertical,
   MoreHorizontal,
+  MoveVertical,
   PanelTopClose,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,15 +39,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLayout } from '@/context/layoutContext';
 import {
+  PANEL_HEIGHTS,
+  PANEL_HEIGHT_LABEL,
   REGION_KEYS,
   REGION_LABEL,
   TEMPLATE_REGIONS,
   hidePanel,
+  isPanelHeight,
   movePanel,
   nudgePanel,
   prefsFor,
@@ -201,6 +207,29 @@ function PanelMenu({
         >
           Half width (wide columns)
         </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MoveVertical className="size-3.5" aria-hidden="true" /> Height
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={prefs.height}
+          onValueChange={value => {
+            if (isPanelHeight(value)) {
+              onChange(l => setPanelPrefs(l, meta.id, { height: value }));
+            }
+          }}
+        >
+          {PANEL_HEIGHTS.map(height => (
+            <DropdownMenuRadioItem
+              key={height}
+              value={height}
+              onSelect={event => event.preventDefault()}
+            >
+              {PANEL_HEIGHT_LABEL[height]}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem
           checked={prefs.collapsed}
           onCheckedChange={checked =>
@@ -248,6 +277,7 @@ function EditableSlot({
       ref={setNodeRef}
       className={cn('layout-slot sortable-slot', isDragging && 'opacity-35')}
       data-span={prefs.span}
+      data-height={prefs.height}
       style={{ transform: CSS.Translate.toString(transform), transition }}
     >
       <div className="rounded-2xl border-2 border-dashed border-ai/35 bg-ai/[0.03] p-1.5 transition-colors hover:border-ai/70">
@@ -271,6 +301,11 @@ function EditableSlot({
               Half
             </span>
           ) : null}
+          {prefs.height !== 'auto' ? (
+            <span className="rounded-full bg-ai/12 px-2 py-0.5 text-[10px] font-semibold text-ai">
+              {PANEL_HEIGHT_LABEL[prefs.height]}
+            </span>
+          ) : null}
           {prefs.collapsed ? (
             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
               Collapsed
@@ -280,7 +315,10 @@ function EditableSlot({
         </div>
         <div
           inert
-          className="pointer-events-none max-h-72 overflow-hidden rounded-xl mask-b-from-60% select-none"
+          className={cn(
+            'pointer-events-none overflow-hidden rounded-xl mask-b-from-60% select-none',
+            prefs.height === 'auto' ? 'max-h-72' : 'h-(--panel-h)'
+          )}
         >
           {content ?? (
             <div className="rounded-xl border border-dashed bg-card/60 px-4 py-6 text-center text-xs text-muted-foreground">
@@ -550,12 +588,18 @@ export function LayoutCanvas<Id extends string>({
               return null;
             }
             const prefs = prefsFor(layout, id);
+            const framed = <div className="panel-frame">{content}</div>;
             return (
-              <div key={id} className="layout-slot" data-span={prefs.span}>
+              <div
+                key={id}
+                className="layout-slot"
+                data-span={prefs.span}
+                data-height={prefs.height}
+              >
                 {prefs.collapsed ? (
-                  <CollapsedSlot meta={meta}>{content}</CollapsedSlot>
+                  <CollapsedSlot meta={meta}>{framed}</CollapsedSlot>
                 ) : (
-                  content
+                  framed
                 )}
               </div>
             );

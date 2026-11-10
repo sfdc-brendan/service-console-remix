@@ -30,9 +30,25 @@ export type Density = (typeof DENSITIES)[number];
 
 export type PanelSpan = 'full' | 'half';
 
+/** `auto` fits the content; the others cap the panel and scroll inside it. */
+export const PANEL_HEIGHTS = ['auto', 'short', 'medium', 'tall'] as const;
+export type PanelHeight = (typeof PANEL_HEIGHTS)[number];
+
+export const PANEL_HEIGHT_LABEL: Record<PanelHeight, string> = {
+  auto: 'Fit content',
+  short: 'Short',
+  medium: 'Medium',
+  tall: 'Tall',
+};
+
+export function isPanelHeight(value: unknown): value is PanelHeight {
+  return PANEL_HEIGHTS.some(height => height === value);
+}
+
 export interface PanelPrefs {
   collapsed: boolean;
   span: PanelSpan;
+  height: PanelHeight;
 }
 
 export const HEADER_STATES = ['expanded', 'compact'] as const;
@@ -126,7 +142,11 @@ export const REGION_LABEL: Record<RegionKey, string> = {
   right: 'Right column',
 };
 
-export const DEFAULT_PREFS: PanelPrefs = { collapsed: false, span: 'full' };
+export const DEFAULT_PREFS: PanelPrefs = {
+  collapsed: false,
+  span: 'full',
+  height: 'auto',
+};
 
 export function defineLayout<
   const Id extends string,
@@ -294,6 +314,9 @@ export function normalizeLayout(raw: unknown, spec: LayoutSpec): PageLayout {
         panels[id] = {
           collapsed: prefs.collapsed === true,
           span: prefs.span === 'half' ? 'half' : 'full',
+          height: isPanelHeight(prefs.height)
+            ? prefs.height
+            : DEFAULT_PREFS.height,
         };
       }
     }
