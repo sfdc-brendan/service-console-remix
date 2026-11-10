@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Receives_All_Cases__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>When any agent has this checked, every new Case work item is routed only to checked agents, ignoring skill requirements and skipping virtual agents. Cases wait in the queue until a checked agent is Online with capacity.</description>
+    <inlineHelpText>Check for the demo presenter so every case created lands in their Omni-Channel. Voice and messaging still route by skill.</inlineHelpText>
+    <label>Receives All Cases</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

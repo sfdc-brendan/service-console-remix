@@ -188,4 +188,51 @@ private class SLK_RoutingTest {
         System.assertEquals('Send compliance documents', routing.get('intent'));
         System.assert(((List<Object>) routing.get('matched')).contains('Security & Compliance'));
     }
+
+    @IsTest
+    static void allCasesAgentGetsEveryCaseEvenWithoutTheSkill() {
+        User specialist = billingSpecialist();
+        staff(specialist.Id, 'Case;Voice;Billing:9');
+        insert new SLK_Agent_Presence__c(
+            Name = 'Presenter',
+            Agent__c = UserInfo.getUserId(),
+            Status__c = 'Offline',
+            Capacity__c = 4,
+            Skills__c = 'Case;Voice;Technical Support:9',
+            Receives_All_Cases__c = true,
+            Status_Changed_At__c = Datetime.now().addMinutes(-5)
+        );
+        SLK_Work_Item__c billingCase = new SLK_Work_Item__c(
+            Channel__c = 'Case',
+            Status__c = 'Queued',
+            Subject__c = 'Overcharged on my subscription',
+            Priority__c = 'High',
+            Required_Skill__c = 'Billing',
+            Skills__c = 'Billing'
+        );
+        SLK_Work_Item__c billingCall = new SLK_Work_Item__c(
+            Channel__c = 'Voice',
+            Status__c = 'Queued',
+            Subject__c = 'Billing question',
+            Priority__c = 'Medium',
+            Required_Skill__c = 'Billing',
+            Skills__c = 'Billing'
+        );
+        insert new List<SLK_Work_Item__c>{ billingCase, billingCall };
+
+        Test.startTest();
+        SLK_RoutingService.routeTick();
+        SLK_Work_Item__c waiting = SLK_RoutingService.loadWork(billingCase.Id);
+        System.assertEquals('Queued', waiting.Status__c, 'The case waits for the all-cases agent instead of going to the specialist');
+        System.assert(SLK_RoutingLog.lastOfType(waiting, 'waiting').get('detail').toString().contains('Offline'), waiting.Routing_Log__c);
+        System.assertEquals(specialist.Id, SLK_RoutingService.loadWork(billingCall.Id).Agent__c, 'Voice still routes by skill');
+
+        SLK_RoutingService.setStatus(UserInfo.getUserId(), 'Online');
+        Test.stopTest();
+
+        SLK_Work_Item__c offered = SLK_RoutingService.loadWork(billingCase.Id);
+        System.assertEquals('Offered', offered.Status__c);
+        System.assertEquals(UserInfo.getUserId(), offered.Agent__c, 'Required skill is not enforced for the all-cases agent');
+        System.assertEquals(true, SLK_RoutingLog.lastOfType(offered, 'offered').get('pinned'));
+    }
 }

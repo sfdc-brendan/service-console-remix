@@ -25,7 +25,7 @@ public with sharing class SLK_RoutingService {
     private static final String ROUTING_SELECT = 'SELECT ' + WORK_FIELDS + ', Routing_Analysis__c, Routing_Log__c FROM SLK_Work_Item__c ';
     private static final String PRESENCE_SELECT =
         'SELECT Id, Name, Agent__c, Agent__r.Name, Agent__r.SmallPhotoUrl, Status__c, Capacity__c, Skills__c, Status_Changed_At__c, ' +
-        'Whisper__c, Whisper_At__c, Virtual_Agent__c FROM SLK_Agent_Presence__c ';
+        'Whisper__c, Whisper_At__c, Virtual_Agent__c, Receives_All_Cases__c FROM SLK_Agent_Presence__c ';
 
     public class RoutingException extends Exception {
     }
@@ -220,15 +220,20 @@ public with sharing class SLK_RoutingService {
             }
         }
         Set<String> staffed = staffedSkills();
+        List<SLK_Agent_Presence__c> caseAgents = allCasesAgents();
 
         List<SLK_Work_Item__c> changed = new List<SLK_Work_Item__c>();
         for (SLK_Work_Item__c item : queued) {
             Boolean ignoreDeclines = item.CreatedDate < now.addSeconds(-DECLINE_MEMORY_SECONDS);
-            String relaxReason = relaxReason(item, staffed, now);
+            Boolean pinned = item.Channel__c == 'Case' && !caseAgents.isEmpty();
+            String relaxReason = pinned ? null : relaxReason(item, staffed, now);
             List<Candidate> candidates = new List<Candidate>();
             Candidate best = null;
             for (SLK_Agent_Presence__c presence : online) {
-                Candidate candidate = evaluate(presence, item, used, hasOffer, ignoreDeclines, relaxReason == null);
+                if (pinned && presence.Receives_All_Cases__c != true) {
+                    continue;
+                }
+                Candidate candidate = evaluate(presence, item, used, hasOffer, ignoreDeclines, relaxReason == null, pinned);
                 candidates.add(candidate);
                 if (candidate.eligible && (best == null || candidate.beats(best))) {
                     best = candidate;
@@ -237,11 +242,13 @@ public with sharing class SLK_RoutingService {
             candidates.sort(new BestFirst());
             if (best == null) {
                 if (SLK_RoutingLog.lastType(item) != 'waiting') {
-                    Map<String, Object> waiting = SLK_RoutingLog.event(
-                        'waiting',
-                        online.isEmpty() ? 'Waiting for an agent to come online' : 'Waiting for a matching agent',
-                        waitingDetail(candidates, item)
-                    );
+                    Map<String, Object> waiting = pinned
+                        ? SLK_RoutingLog.event('waiting', 'Waiting for ' + agentNames(caseAgents), pinnedWaitingDetail(caseAgents, candidates))
+                        : SLK_RoutingLog.event(
+                              'waiting',
+                              online.isEmpty() ? 'Waiting for an agent to come online' : 'Waiting for a matching agent',
+                              waitingDetail(candidates, item)
+                          );
                     waiting.put('candidates', snapshot(candidates));
                     SLK_RoutingLog.add(item, waiting);
                     changed.add(item);
@@ -252,7 +259,12 @@ public with sharing class SLK_RoutingService {
             if (relaxed) {
                 SLK_RoutingLog.add(item, SLK_RoutingLog.event('relaxed', 'Widened the search', relaxReason));
             }
-            Map<String, Object> offer = SLK_RoutingLog.event('offered', 'Offered to ' + best.name, offerDetail(best));
+            Map<String, Object> offer = SLK_RoutingLog.event(
+                'offered',
+                'Offered to ' + best.name,
+                (pinned ? 'All cases go to ' + agentNames(caseAgents) + ' · ' : '') + offerDetail(best)
+            );
+            offer.put('pinned', pinned);
             offer.put('agentId', best.presence.Agent__c);
             offer.put('agentName', best.name);
             offer.put('score', best.score);
@@ -289,9 +301,36 @@ public with sharing class SLK_RoutingService {
         return ordered;
     }
 
+    /** Agents flagged to receive every case; while any exist, Case work routes only to them. */
+    private static List<SLK_Agent_Presence__c> allCasesAgents() {
+        return queryPresence('WHERE Receives_All_Cases__c = TRUE AND Agent__c != null', new Map<String, Object>());
+    }
+
+    private static String agentNames(List<SLK_Agent_Presence__c> agents) {
+        List<String> names = new List<String>();
+        for (SLK_Agent_Presence__c presence : agents) {
+            names.add(presence.Agent__r?.Name == null ? presence.Name : presence.Agent__r.Name);
+        }
+        return String.join(names, ', ');
+    }
+
+    private static String pinnedWaitingDetail(List<SLK_Agent_Presence__c> agents, List<Candidate> candidates) {
+        Map<Id, String> reasons = new Map<Id, String>();
+        for (Candidate candidate : candidates) {
+            reasons.put(candidate.presence.Agent__c, candidate.reason);
+        }
+        List<String> parts = new List<String>{ 'All cases are reserved for ' + agentNames(agents) };
+        for (SLK_Agent_Presence__c presence : agents) {
+            String name = presence.Agent__r?.Name == null ? presence.Name : presence.Agent__r.Name;
+            parts.add(name + ': ' + (reasons.containsKey(presence.Agent__c) ? reasons.get(presence.Agent__c) : presence.Status__c));
+        }
+        return String.join(parts, ' · ');
+    }
+
     /**
      * Scores an online agent for a piece of work. Required skill proficiency counts most, preferred
      * skills add up to 20 points, current load subtracts up to 20, and virtual agents rank just below people.
+     * With anySkills, channel staffing and the required skill are not checked (the all-cases rule).
      */
     private static Candidate evaluate(
         SLK_Agent_Presence__c presence,
@@ -299,7 +338,8 @@ public with sharing class SLK_RoutingService {
         Map<Id, Integer> used,
         Set<Id> hasOffer,
         Boolean ignoreDeclines,
-        Boolean enforceRequired
+        Boolean enforceRequired,
+        Boolean anySkills
     ) {
         Candidate candidate = new Candidate();
         candidate.presence = presence;
@@ -333,13 +373,13 @@ public with sharing class SLK_RoutingService {
         }
         candidate.score = Math.max(0, Math.min(100, points));
 
-        if (!levels.containsKey(item.Channel__c.toLowerCase())) {
+        if (!anySkills && !levels.containsKey(item.Channel__c.toLowerCase())) {
             candidate.reason = 'Not staffed on ' + item.Channel__c;
         } else if (hasOffer.contains(presence.Agent__c)) {
             candidate.reason = 'Reviewing another offer';
         } else if (candidate.load + weight(item.Channel__c) > candidate.capacity) {
             candidate.reason = 'At capacity (' + candidate.load + '/' + candidate.capacity + ')';
-        } else if (enforceRequired && required != null && !levels.containsKey(required.toLowerCase())) {
+        } else if (!anySkills && enforceRequired && required != null && !levels.containsKey(required.toLowerCase())) {
             candidate.reason = 'Missing ' + required;
         } else if (!ignoreDeclines && declined(item, presence.Agent__c)) {
             candidate.reason = 'Declined it earlier';

@@ -60,6 +60,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>SLK_Agent_Presence__c.Receives_All_Cases__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>SLK_Agent_Presence__c.Virtual_Agent__c</field>
         <readable>true</readable>
     </fieldPermissions>
