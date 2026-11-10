@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AI_Rationale__c</fullName>
+    <description>Why the AI grouped these cases and classified the gap kind.</description>
+    <inlineHelpText>Use this to sanity-check the AI before drafting.</inlineHelpText>
+    <label>AI Rationale</label>
+    <length>32768</length>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>4</visibleLines>
+</CustomField>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Skills__c</fullName>
+    <description>Semicolon-separated channels and skills the agent can handle, for example Case;Voice;Messaging;Billing.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Work with a required skill is only offered to agents listing that skill.</inlineHelpText>
+    <label>Skills</label>
+    <length>255</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

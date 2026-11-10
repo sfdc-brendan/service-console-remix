@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UIBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Reimagined Service Console: omni-channel routing, supervisor command center, and AI-assisted case, voice, and messaging workspaces.</description>
+    <isActive>true</isActive>
+    <masterLabel>Service Console</masterLabel>
+    <target>CustomApplication</target>
+    <version>1</version>
+</UIBundle>

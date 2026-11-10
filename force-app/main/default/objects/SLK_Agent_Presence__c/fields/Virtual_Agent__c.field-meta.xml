@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Virtual_Agent__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>True for demo teammates whose work is accepted and closed automatically by the routing engine.</description>
+    <inlineHelpText>Keeps the supervisor floor busy during demos. Leave unchecked for real agents.</inlineHelpText>
+    <label>Virtual Agent</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

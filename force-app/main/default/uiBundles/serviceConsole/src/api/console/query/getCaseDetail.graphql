@@ -1,0 +1,179 @@
+query GetCaseDetail($id: ID!) {
+  uiapi {
+    query {
+      Case(where: { Id: { eq: $id } }, first: 1) {
+        edges {
+          node {
+            Id
+            CaseNumber @optional {
+              value
+            }
+            Subject @optional {
+              value
+            }
+            Description @optional {
+              value
+            }
+            Status @optional {
+              value
+              displayValue
+            }
+            Priority @optional {
+              value
+              displayValue
+            }
+            Origin @optional {
+              value
+              displayValue
+            }
+            Type @optional {
+              value
+              displayValue
+            }
+            Reason @optional {
+              value
+              displayValue
+            }
+            IsEscalated @optional {
+              value
+            }
+            IsClosed @optional {
+              value
+            }
+            CreatedDate @optional {
+              value
+            }
+            LastModifiedDate @optional {
+              value
+            }
+            ClosedDate @optional {
+              value
+            }
+            OwnerId @optional {
+              value
+            }
+            Owner @optional {
+              ...CaseOwnerUser
+              ...CaseOwnerGroup
+            }
+            ContactId @optional {
+              value
+            }
+            Contact @optional {
+              Id
+              Name @optional {
+                value
+              }
+              Email @optional {
+                value
+              }
+              Phone @optional {
+                value
+              }
+              MobilePhone @optional {
+                value
+              }
+              Title @optional {
+                value
+              }
+              MailingCity @optional {
+                value
+              }
+            }
+            AccountId @optional {
+              value
+            }
+            Account @optional {
+              Id
+              Name @optional {
+                value
+              }
+              Industry @optional {
+                value
+                displayValue
+              }
+              Type @optional {
+                value
+                displayValue
+              }
+              Phone @optional {
+                value
+              }
+              AnnualRevenue @optional {
+                value
+                displayValue
+              }
+              NumberOfEmployees @optional {
+                value
+              }
+              BillingCity @optional {
+                value
+              }
+              Rating @optional {
+                value
+                displayValue
+              }
+            }
+            CaseComments(first: 25, orderBy: { CreatedDate: { order: DESC } }) @optional {
+              edges {
+                node {
+                  Id
+                  CommentBody @optional {
+                    value
+                  }
+                  IsPublished @optional {
+                    value
+                  }
+                  CreatedDate @optional {
+                    value
+                  }
+                  CreatedBy @optional {
+                    Name @optional {
+                      value
+                    }
+                  }
+                }
+              }
+            }
+            Tasks(first: 25, orderBy: { CreatedDate: { order: DESC } }) @optional {
+              edges {
+                node {
+                  Id
+                  Subject @optional {
+                    value
+                  }
+                  Status @optional {
+                    value
+                  }
+                  ActivityDate @optional {
+                    value
+                  }
+                  TaskSubtype @optional {
+                    value
+                  }
+                  CreatedDate @optional {
+                    value
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment CaseOwnerUser on User {
+  Id
+  Name @optional {
+    value
+  }
+}
+
+fragment CaseOwnerGroup on Group {
+  Id
+  Name @optional {
+    value
+  }
+}

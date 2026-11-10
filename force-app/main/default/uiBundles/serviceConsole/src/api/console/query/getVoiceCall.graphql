@@ -1,0 +1,44 @@
+query GetVoiceCall($id: ID!) {
+  uiapi {
+    query {
+      VoiceCall(where: { Id: { eq: $id } }, first: 1) {
+        edges {
+          node {
+            Id
+            Name @optional {
+              value
+            }
+            CallType @optional {
+              value
+              displayValue
+            }
+            CallStartDateTime @optional {
+              value
+            }
+            CallDurationInSeconds @optional {
+              value
+            }
+            FromPhoneNumber @optional {
+              value
+            }
+            ToPhoneNumber @optional {
+              value
+            }
+            CallDisposition @optional {
+              value
+            }
+            CallResolution @optional {
+              value
+            }
+            RelatedRecordId @optional {
+              value
+            }
+            CreatedDate @optional {
+              value
+            }
+          }
+        }
+      }
+    }
+  }
+}

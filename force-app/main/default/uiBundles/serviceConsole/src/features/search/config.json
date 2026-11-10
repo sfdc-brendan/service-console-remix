@@ -1,0 +1,72 @@
+{
+  "pagination": {
+    "mode": "per-source",
+    "pageSize": 10,
+    "pageSizeOptions": [5, 10, 20]
+  },
+  "sources": [
+    {
+      "kind": "sobject",
+      "key": "cases",
+      "objectName": "Case",
+      "label": "Cases",
+      "labelSingular": "Case",
+      "routePattern": "/case/:id",
+      "searchableFields": ["Subject", "CaseNumber"],
+      "displayFields": [
+        "CaseNumber",
+        "Subject",
+        "Status",
+        "Priority",
+        "Origin",
+        { "name": "Contact", "subfields": ["Name"] }
+      ],
+      "filterBy": [
+        { "field": "Status", "label": "Status", "type": "picklist" },
+        { "field": "Priority", "label": "Priority", "type": "picklist" },
+        { "field": "Origin", "label": "Channel", "type": "picklist" }
+      ],
+      "sortBy": [
+        { "field": "CreatedDate", "label": "Created Date" },
+        { "field": "CaseNumber", "label": "Case Number" },
+        { "field": "Priority", "label": "Priority" }
+      ],
+      "defaultSort": { "field": "CreatedDate", "direction": "DESC" }
+    },
+    {
+      "kind": "sobject",
+      "key": "contacts",
+      "objectName": "Contact",
+      "label": "Contacts",
+      "labelSingular": "Contact",
+      "routePattern": "/contact/:id",
+      "searchableFields": ["Name", "Email", "Phone"],
+      "displayFields": [
+        "Name",
+        "Title",
+        "Email",
+        "Phone",
+        { "name": "Account", "subfields": ["Name"] }
+      ],
+      "sortBy": [
+        { "field": "Name", "label": "Name" },
+        { "field": "CreatedDate", "label": "Created Date" }
+      ]
+    },
+    {
+      "kind": "sobject",
+      "key": "accounts",
+      "objectName": "Account",
+      "label": "Accounts",
+      "labelSingular": "Account",
+      "routePattern": "/account/:id",
+      "searchableFields": ["Name", "Phone"],
+      "displayFields": ["Name", "Industry", "Type", "Phone"],
+      "filterBy": [{ "field": "Industry", "label": "Industry", "type": "picklist" }],
+      "sortBy": [
+        { "field": "Name", "label": "Name" },
+        { "field": "CreatedDate", "label": "Created Date" }
+      ]
+    }
+  ]
+}

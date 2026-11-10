@@ -1,0 +1,9 @@
+mutation CreateCaseComment($input: CaseCommentCreateInput!) {
+  uiapi(input: { allOrNone: true }) {
+    CaseCommentCreate(input: $input) {
+      Record {
+        Id
+      }
+    }
+  }
+}

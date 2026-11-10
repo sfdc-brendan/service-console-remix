@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Submitted_By__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Author who submitted the article for review.</description>
+    <inlineHelpText>Set automatically on submission.</inlineHelpText>
+    <label>Submitted By</label>
+    <referenceTo>User</referenceTo>
+    <relationshipLabel>Article Reviews Submitted</relationshipLabel>
+    <relationshipName>SLK_Reviews_Submitted</relationshipName>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

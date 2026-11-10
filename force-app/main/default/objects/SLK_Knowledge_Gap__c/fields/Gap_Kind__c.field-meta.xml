@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Gap_Kind__c</fullName>
+    <description>Whether the cases need a brand-new article or an existing article simply was not attached.</description>
+    <inlineHelpText>Missing Content = write a new article. Unlinked Content = attach the matched article to these cases.</inlineHelpText>
+    <label>Gap Kind</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Missing Content</fullName>
+                <default>true</default>
+                <label>Missing Content</label>
+            </value>
+            <value>
+                <fullName>Unlinked Content</fullName>
+                <default>false</default>
+                <label>Unlinked Content</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Whisper_At__c</fullName>
+    <description>When the latest supervisor whisper was sent.</description>
+    <inlineHelpText>The console shows whispers newer than the last one the agent dismissed.</inlineHelpText>
+    <label>Whisper At</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>DateTime</type>
+</CustomField>

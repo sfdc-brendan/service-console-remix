@@ -1,0 +1,49 @@
+query GetMessagingSession($id: ID!) {
+  uiapi {
+    query {
+      MessagingSession(where: { Id: { eq: $id } }, first: 1) {
+        edges {
+          node {
+            Id
+            Name @optional {
+              value
+            }
+            Status @optional {
+              value
+              displayValue
+            }
+            ChannelType @optional {
+              value
+              displayValue
+            }
+            ChannelName @optional {
+              value
+            }
+            Origin @optional {
+              value
+              displayValue
+            }
+            StartTime @optional {
+              value
+            }
+            EndTime @optional {
+              value
+            }
+            CaseId @optional {
+              value
+            }
+            EndUserContact @optional {
+              Id
+              Name @optional {
+                value
+              }
+            }
+            CreatedDate @optional {
+              value
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Agent__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>User this presence record belongs to. One presence record per agent.</description>
+    <inlineHelpText>The service agent whose availability is tracked.</inlineHelpText>
+    <label>Agent</label>
+    <referenceTo>User</referenceTo>
+    <relationshipLabel>Agent Presences</relationshipLabel>
+    <relationshipName>SLK_Agent_Presences</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

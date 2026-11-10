@@ -1,0 +1,15 @@
+mutation UpdateCase($input: CaseUpdateInput!) {
+  uiapi(input: { allOrNone: true }) {
+    CaseUpdate(input: $input) {
+      Record {
+        Id
+        Status @optional {
+          value
+        }
+        Priority @optional {
+          value
+        }
+      }
+    }
+  }
+}

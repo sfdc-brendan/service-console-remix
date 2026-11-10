@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Queue__c</fullName>
+    <description>Name of the queue the work waits in, for example Tier 1 Support or Billing.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Supervisors see backlog and wait time per queue.</inlineHelpText>
+    <label>Queue</label>
+    <length>80</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

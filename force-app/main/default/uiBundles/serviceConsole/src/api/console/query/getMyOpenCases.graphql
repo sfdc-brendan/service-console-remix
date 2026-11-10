@@ -1,0 +1,41 @@
+query GetMyOpenCases($ownerId: ID!) {
+  uiapi {
+    query {
+      Case(
+        where: { OwnerId: { eq: $ownerId }, IsClosed: { eq: false } }
+        orderBy: { LastModifiedDate: { order: DESC } }
+        first: 25
+      ) {
+        edges {
+          node {
+            Id
+            CaseNumber @optional {
+              value
+            }
+            Subject @optional {
+              value
+            }
+            Status @optional {
+              value
+            }
+            Priority @optional {
+              value
+            }
+            Origin @optional {
+              value
+            }
+            CreatedDate @optional {
+              value
+            }
+            Contact @optional {
+              Name @optional {
+                value
+              }
+            }
+          }
+        }
+        totalCount
+      }
+    }
+  }
+}

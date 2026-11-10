@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Matched_Article_Id__c</fullName>
+    <description>Knowledge Article Id of an existing article that already covers this gap.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Only set for Unlinked Content gaps.</inlineHelpText>
+    <label>Matched Article Id</label>
+    <length>18</length>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

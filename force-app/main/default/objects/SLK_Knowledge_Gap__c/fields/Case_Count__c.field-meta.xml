@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Case_Count__c</fullName>
+    <description>Number of uncovered cases in this theme at analysis time.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Snapshot taken when the analysis ran; the live count is recalculated in the app.</inlineHelpText>
+    <label>Case Count</label>
+    <precision>9</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

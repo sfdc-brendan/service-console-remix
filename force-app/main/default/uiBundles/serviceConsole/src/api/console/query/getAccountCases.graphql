@@ -1,0 +1,33 @@
+query GetAccountCases($accountId: ID!, $excludeId: ID!) {
+  uiapi {
+    query {
+      Case(
+        where: { AccountId: { eq: $accountId }, Id: { ne: $excludeId } }
+        orderBy: { CreatedDate: { order: DESC } }
+        first: 6
+      ) {
+        edges {
+          node {
+            Id
+            CaseNumber @optional {
+              value
+            }
+            Subject @optional {
+              value
+            }
+            Status @optional {
+              value
+            }
+            Priority @optional {
+              value
+            }
+            CreatedDate @optional {
+              value
+            }
+          }
+        }
+        totalCount
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+query GetRecentChannelActivity {
+  uiapi {
+    query {
+      VoiceCall(orderBy: { CreatedDate: { order: DESC } }, first: 6) {
+        edges {
+          node {
+            Id
+            Name @optional {
+              value
+            }
+            CallType @optional {
+              value
+            }
+            CallDurationInSeconds @optional {
+              value
+            }
+            FromPhoneNumber @optional {
+              value
+            }
+            CreatedDate @optional {
+              value
+            }
+          }
+        }
+        totalCount
+      }
+      MessagingSession(orderBy: { CreatedDate: { order: DESC } }, first: 6) {
+        edges {
+          node {
+            Id
+            Name @optional {
+              value
+            }
+            Status @optional {
+              value
+            }
+            ChannelType @optional {
+              value
+              displayValue
+            }
+            CreatedDate @optional {
+              value
+            }
+            EndUserContact @optional {
+              Name @optional {
+                value
+              }
+            }
+          }
+        }
+        totalCount
+      }
+    }
+  }
+}

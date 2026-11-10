@@ -1,0 +1,20 @@
+query GetWorkBySource($sourceId: String!) {
+  uiapi {
+    query {
+      SLK_Work_Item__c(
+        where: { Source_Record_Id__c: { eq: $sourceId } }
+        orderBy: { CreatedDate: { order: DESC } }
+        first: 1
+      ) {
+        edges {
+          node {
+            Id
+            Case__c @optional {
+              value
+            }
+          }
+        }
+      }
+    }
+  }
+}
