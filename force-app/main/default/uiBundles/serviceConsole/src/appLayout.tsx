@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Briefcase, Building2, CircleUserRound, Headphones, Home, LayoutDashboard, MessageSquareText, PanelsTopLeft, Phone, Plus, Search as SearchIcon, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -175,14 +175,34 @@ function CustomizeButton() {
   );
 }
 
+/** Publishes the sticky console header's height as `--console-header-h` so page-level sticky bars sit below it. */
+function useHeaderHeightVar() {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = ref.current;
+    if (!header) {
+      return;
+    }
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => root.style.setProperty('--console-header-h', `${header.offsetHeight}px`));
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--console-header-h');
+    };
+  }, []);
+  return ref;
+}
+
 function ConsoleShell() {
   const [simulateOpen, setSimulateOpen] = useState(false);
   const { editing } = useLayout();
+  const headerRef = useHeaderHeightVar();
   useHostChrome();
   return (
     <div className="paper-grain min-h-full pl-16">
       <UtilityRail onSimulate={() => setSimulateOpen(true)} />
-      <header className="sticky top-0 z-20 flex items-end gap-4 border-b bg-card/85 px-4 pt-2 backdrop-blur">
+      <header ref={headerRef} className="sticky top-0 z-20 flex items-end gap-4 border-b bg-card/85 px-4 pt-2 backdrop-blur">
         <div className="hidden pb-2.5 md:block">
           <p className="font-display text-base leading-none font-semibold">Service Console</p>
           <p className="text-[11px] text-muted-foreground">Service Cloud</p>

@@ -35,6 +35,20 @@ export interface PanelPrefs {
   span: PanelSpan;
 }
 
+export const HEADER_STATES = ['expanded', 'compact'] as const;
+export type HeaderState = (typeof HEADER_STATES)[number];
+
+export const HEADER_FIELDS = ['date', 'headline', 'presence'] as const;
+export type HeaderField = (typeof HEADER_FIELDS)[number];
+
+/** Page header (banner) settings. `stats` lists the visible stats in display order. */
+export interface HeaderLayout {
+  defaultState: HeaderState;
+  autoCollapse: boolean;
+  show: Record<HeaderField, boolean>;
+  stats: string[];
+}
+
 export interface PageLayout {
   version: 1;
   template: LayoutTemplate;
@@ -45,6 +59,8 @@ export interface PageLayout {
   rightWidth: ColumnWidth;
   density: Density;
   stickyRails: boolean;
+  /** Present only on pages whose spec declares a header. */
+  header?: HeaderLayout;
 }
 
 export interface PanelMeta<Id extends string = string> {
@@ -67,11 +83,34 @@ export interface LayoutDefaults<Id extends string = string> {
   stickyRails?: boolean;
 }
 
-export interface LayoutSpec<Id extends string = string> {
+export interface HeaderStatMeta<StatId extends string = string> {
+  id: StatId;
+  label: string;
+  /** Label used on the compact bar's stat chips. */
+  shortLabel: string;
+  description: string;
+  icon: LucideIcon;
+}
+
+export interface HeaderSpec<StatId extends string = string> {
+  stats: readonly HeaderStatMeta<StatId>[];
+  defaults: {
+    defaultState?: HeaderState;
+    autoCollapse?: boolean;
+    show?: Partial<Record<HeaderField, boolean>>;
+    stats: StatId[];
+  };
+}
+
+export interface LayoutSpec<
+  Id extends string = string,
+  StatId extends string = string,
+> {
   page: PageKey;
   label: string;
   panels: readonly PanelMeta<Id>[];
   defaults: LayoutDefaults<Id>;
+  header?: HeaderSpec<StatId>;
 }
 
 export const TEMPLATE_REGIONS: Record<LayoutTemplate, RegionKey[]> = {
@@ -89,10 +128,58 @@ export const REGION_LABEL: Record<RegionKey, string> = {
 
 export const DEFAULT_PREFS: PanelPrefs = { collapsed: false, span: 'full' };
 
-export function defineLayout<const Id extends string>(
-  spec: LayoutSpec<Id>
-): LayoutSpec<Id> {
+export function defineLayout<
+  const Id extends string,
+  const StatId extends string = never,
+>(spec: LayoutSpec<Id, StatId>): LayoutSpec<Id, StatId> {
   return spec;
+}
+
+function defaultHeader(header: HeaderSpec): HeaderLayout {
+  const { defaults } = header;
+  return {
+    defaultState: defaults.defaultState ?? 'expanded',
+    autoCollapse: defaults.autoCollapse ?? true,
+    show: {
+      date: defaults.show?.date ?? true,
+      headline: defaults.show?.headline ?? true,
+      presence: defaults.show?.presence ?? true,
+    },
+    stats: [...defaults.stats],
+  };
+}
+
+function normalizeHeader(raw: unknown, header: HeaderSpec): HeaderLayout {
+  const fallback = defaultHeader(header);
+  if (!isRecord(raw)) {
+    return fallback;
+  }
+  const known = new Set(header.stats.map(stat => stat.id));
+  const stats = Array.isArray(raw.stats)
+    ? [
+        ...new Set(
+          raw.stats.filter(
+            (id): id is string => typeof id === 'string' && known.has(id)
+          )
+        ),
+      ]
+    : fallback.stats;
+  const rawShow = isRecord(raw.show) ? raw.show : {};
+  const show = { ...fallback.show };
+  for (const field of HEADER_FIELDS) {
+    if (typeof rawShow[field] === 'boolean') {
+      show[field] = rawShow[field];
+    }
+  }
+  return {
+    defaultState: oneOf(raw.defaultState, HEADER_STATES, fallback.defaultState),
+    autoCollapse:
+      typeof raw.autoCollapse === 'boolean'
+        ? raw.autoCollapse
+        : fallback.autoCollapse,
+    show,
+    stats,
+  };
 }
 
 export function buildDefault(spec: LayoutSpec): PageLayout {
@@ -118,6 +205,9 @@ export function buildDefault(spec: LayoutSpec): PageLayout {
     density: defaults.density ?? 'comfortable',
     stickyRails: defaults.stickyRails ?? true,
   };
+  if (spec.header) {
+    layout.header = defaultHeader(spec.header);
+  }
   return placeMissing(layout, spec, layout);
 }
 
@@ -222,6 +312,9 @@ export function normalizeLayout(raw: unknown, spec: LayoutSpec): PageLayout {
         ? raw.stickyRails
         : fallback.stickyRails,
   };
+  if (spec.header) {
+    layout.header = normalizeHeader(raw.header, spec.header);
+  }
   return placeMissing(layout, spec, fallback);
 }
 
@@ -340,6 +433,67 @@ export function setPanelPrefs(
     ...layout,
     panels: { ...layout.panels, [id]: { ...prefsFor(layout, id), ...patch } },
   };
+}
+
+export function setHeader(
+  layout: PageLayout,
+  patch: Partial<HeaderLayout>
+): PageLayout {
+  return layout.header
+    ? { ...layout, header: { ...layout.header, ...patch } }
+    : layout;
+}
+
+export function setHeaderField(
+  layout: PageLayout,
+  field: HeaderField,
+  visible: boolean
+): PageLayout {
+  return layout.header
+    ? setHeader(layout, { show: { ...layout.header.show, [field]: visible } })
+    : layout;
+}
+
+/** Shows or hides a header stat; a newly shown stat goes where the spec lists it relative to visible ones. */
+export function toggleHeaderStat(
+  layout: PageLayout,
+  spec: LayoutSpec,
+  id: string,
+  visible: boolean
+): PageLayout {
+  const header = layout.header;
+  if (!header || !spec.header) {
+    return layout;
+  }
+  const rest = header.stats.filter(item => item !== id);
+  if (!visible) {
+    return setHeader(layout, { stats: rest });
+  }
+  const order = spec.header.stats.map(stat => stat.id);
+  const rank = order.indexOf(id);
+  const at = rest.findIndex(item => order.indexOf(item) > rank);
+  const stats = [...rest];
+  stats.splice(at < 0 ? stats.length : at, 0, id);
+  return setHeader(layout, { stats });
+}
+
+export function nudgeHeaderStat(
+  layout: PageLayout,
+  id: string,
+  delta: -1 | 1
+): PageLayout {
+  const header = layout.header;
+  if (!header) {
+    return layout;
+  }
+  const index = header.stats.indexOf(id);
+  const target = index + delta;
+  if (index < 0 || target < 0 || target >= header.stats.length) {
+    return layout;
+  }
+  const stats = [...header.stats];
+  [stats[index], stats[target]] = [stats[target], stats[index]];
+  return setHeader(layout, { stats });
 }
 
 export function sameLayout(a: PageLayout, b: PageLayout): boolean {

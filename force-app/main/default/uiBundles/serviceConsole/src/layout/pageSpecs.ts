@@ -106,7 +106,46 @@ export const HOME_LAYOUT = defineLayout({
       right: ['focus', 'sla', 'tasks', 'queuePulse', 'activity'],
     },
   },
+  header: {
+    stats: [
+      {
+        id: 'closedToday',
+        label: 'Closed today',
+        shortLabel: 'Closed',
+        description: 'Cases you closed since midnight.',
+        icon: CheckCircle2,
+      },
+      {
+        id: 'avgHandle',
+        label: 'Avg handle',
+        shortLabel: 'AHT',
+        description: 'Your average handle time today.',
+        icon: Timer,
+      },
+      {
+        id: 'openCases',
+        label: 'Open cases',
+        shortLabel: 'Open',
+        description: 'Open cases you own.',
+        icon: Briefcase,
+      },
+      {
+        id: 'inQueue',
+        label: 'In queue',
+        shortLabel: 'Queue',
+        description: 'Work waiting in your Omni-Channel queues.',
+        icon: Hourglass,
+      },
+    ],
+    defaults: {
+      stats: ['closedToday', 'avgHandle', 'openCases', 'inQueue'],
+    },
+  },
 });
+
+export type HomeStatId = NonNullable<
+  typeof HOME_LAYOUT.header
+>['stats'][number]['id'];
 
 export const CASE_LAYOUT = defineLayout({
   page: 'case',

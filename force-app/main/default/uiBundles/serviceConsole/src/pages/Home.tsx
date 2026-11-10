@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { consoleApi, PRESENCE_STATUSES } from '@/api/console/consoleApi';
+import { consoleApi } from '@/api/console/consoleApi';
 import {
   getMyOpenCases,
   getRecentChannelActivity,
@@ -22,7 +22,6 @@ import { useNow } from '@/hooks/useNow';
 import {
   formatDuration,
   formatMinutes,
-  greeting,
   relativeTime,
   secondsSince,
   workPath,
@@ -30,6 +29,7 @@ import {
 import { cn } from '@/lib/utils';
 import { HOME_LAYOUT } from '@/layout/pageSpecs';
 import { LayoutCanvas } from '@/components/layout/LayoutCanvas';
+import { HomeBanner } from '@/components/home/HomeBanner';
 import { SlaWatchPanel } from '@/components/insights/SlaPanels';
 import {
   FollowUpsPanel,
@@ -44,28 +44,13 @@ import {
   ErrorNote,
   Meter,
   Panel,
-  PRESENCE_META,
-  PresenceDot,
   PriorityBadge,
   SentimentBadge,
   ShimmerLines,
 } from '@/components/console/primitives';
 
-function HeroStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="font-display text-3xl leading-none font-semibold tabular-nums">
-        {value}
-      </p>
-      <p className="mt-1 text-[11px] uppercase tracking-wider text-white/55">
-        {label}
-      </p>
-    </div>
-  );
-}
-
 export default function Home() {
-  const { me, omni, setPresence } = useConsole();
+  const { me, omni } = useConsole();
   const now = useNow(1000);
   const userId = me?.userId ?? null;
 
@@ -81,81 +66,11 @@ export default function Home() {
   );
   const activity = useResource(getRecentChannelActivity, 'activity', 30000);
 
-  const firstName = me?.name.split(' ')[0] ?? '';
-  const status = omni?.presence.status ?? 'Offline';
   const sentiment = stats.data?.sentiment;
 
   return (
     <div className="stagger space-y-5">
-      <section className="ink-panel relative overflow-hidden rounded-2xl p-6 lg:p-8">
-        <div
-          className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full border border-white/10"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute -top-10 right-10 size-40 rounded-full border border-white/10"
-          aria-hidden="true"
-        />
-        <div className="relative grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-end">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/50">
-              {new Date(now).toLocaleDateString(undefined, {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-            <h1 className="mt-2 text-4xl font-semibold lg:text-5xl">
-              {greeting(new Date(now))}
-              {firstName ? `, ${firstName}` : ''}.
-            </h1>
-            <p className="mt-2 max-w-xl text-white/70">
-              {focus.data?.headline ??
-                (status === 'Online'
-                  ? 'You are live. New work will be offered as it arrives.'
-                  : 'Set yourself to Available to start receiving routed work.')}
-            </p>
-            <div
-              className="mt-5 flex flex-wrap gap-2"
-              role="radiogroup"
-              aria-label="Presence status"
-            >
-              {PRESENCE_STATUSES.map(option => (
-                <button
-                  key={option}
-                  type="button"
-                  role="radio"
-                  aria-checked={status === option}
-                  onClick={() => void setPresence(option)}
-                  className={cn(
-                    'flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm transition-colors',
-                    status === option
-                      ? 'border-white bg-white text-ink'
-                      : 'border-white/20 text-white/80 hover:bg-white/10'
-                  )}
-                >
-                  <PresenceDot status={option} />
-                  {PRESENCE_META[option].label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-            <HeroStat
-              label="Closed today"
-              value={stats.data?.closedToday ?? '–'}
-            />
-            <HeroStat
-              label="Avg handle"
-              value={
-                stats.data ? formatMinutes(stats.data.avgHandleSeconds) : '–'
-              }
-            />
-            <HeroStat label="Open cases" value={stats.data?.openCases ?? '–'} />
-            <HeroStat label="In queue" value={omni?.queued ?? '–'} />
-          </div>
-        </div>
-      </section>
+      <HomeBanner stats={stats.data} focus={focus.data} />
 
       <LayoutCanvas
         spec={HOME_LAYOUT}

@@ -1,10 +1,13 @@
 import { useEffect, useId, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
+  ArrowDown,
+  ArrowUp,
   Columns3,
   Eye,
   PanelLeft,
   PanelRight,
+  PanelTop,
   RotateCcw,
   Save,
   SlidersHorizontal,
@@ -31,13 +34,22 @@ import { useLayout } from '@/context/layoutContext';
 import {
   COLUMN_WIDTHS,
   DENSITIES,
+  HEADER_FIELDS,
+  HEADER_STATES,
   TEMPLATE_REGIONS,
   TEMPLATES,
   hidePanel,
+  nudgeHeaderStat,
+  setHeader,
+  setHeaderField,
   showPanel,
+  toggleHeaderStat,
   withTemplate,
   type ColumnWidth,
   type Density,
+  type HeaderField,
+  type HeaderLayout,
+  type HeaderState,
   type LayoutSpec,
   type LayoutTemplate,
   type PageLayout,
@@ -173,6 +185,195 @@ function ColumnsPopover({
             </span>
           </span>
         </label>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const HEADER_STATE_LABEL: Record<HeaderState, string> = {
+  expanded: 'Expanded',
+  compact: 'Compact',
+};
+
+const HEADER_FIELD_META: Record<
+  HeaderField,
+  { label: string; description: string }
+> = {
+  date: { label: 'Date', description: "Today's date above the greeting." },
+  headline: {
+    label: 'AI headline',
+    description: 'One-line focus summary for the day.',
+  },
+  presence: {
+    label: 'Presence control',
+    description: 'Lets agents change their Omni-Channel status.',
+  },
+};
+
+function BannerPopover({
+  spec,
+  header,
+  onChange,
+}: {
+  spec: LayoutSpec;
+  header: HeaderLayout;
+  onChange: (fn: (l: PageLayout) => PageLayout) => void;
+}) {
+  const autoId = useId();
+  const stats = spec.header?.stats ?? [];
+  const visible = header.stats.flatMap(
+    id => stats.find(stat => stat.id === id) ?? []
+  );
+  const hidden = stats.filter(stat => !header.stats.includes(stat.id));
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-white hover:bg-white/10 hover:text-white"
+        >
+          <PanelTop className="size-4" aria-hidden="true" /> Banner
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        align="center"
+        className="max-h-[70vh] w-80 space-y-4 overflow-y-auto"
+      >
+        <div className="space-y-1.5">
+          <Segmented
+            label="Default state"
+            value={header.defaultState}
+            options={HEADER_STATES}
+            labels={HEADER_STATE_LABEL}
+            onChange={defaultState =>
+              onChange(l => setHeader(l, { defaultState }))
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Previewed on the page while you edit. Agents can still collapse or
+            expand it for themselves.
+          </p>
+        </div>
+        <label htmlFor={autoId} className="flex items-start gap-2.5 text-sm">
+          <Checkbox
+            id={autoId}
+            checked={header.autoCollapse}
+            onCheckedChange={checked =>
+              onChange(l => setHeader(l, { autoCollapse: checked === true }))
+            }
+          />
+          <span>
+            <span className="block text-xs font-medium">
+              Auto-collapse on scroll
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              Shows the compact bar at the top once the full banner scrolls
+              away.
+            </span>
+          </span>
+        </label>
+
+        <fieldset className="space-y-1">
+          <legend className="mb-1 text-xs font-medium">Show</legend>
+          {HEADER_FIELDS.map(field => {
+            const inputId = `banner-field-${field}`;
+            return (
+              <label
+                key={field}
+                htmlFor={inputId}
+                className="flex cursor-pointer items-start gap-2.5 rounded-lg px-1 py-1.5 hover:bg-accent/60"
+              >
+                <Checkbox
+                  id={inputId}
+                  checked={header.show[field]}
+                  onCheckedChange={checked =>
+                    onChange(l => setHeaderField(l, field, checked === true))
+                  }
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="block text-sm font-medium">
+                    {HEADER_FIELD_META[field].label}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {HEADER_FIELD_META[field].description}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+
+        <fieldset className="space-y-1">
+          <legend className="mb-1 text-xs font-medium">Stats</legend>
+          <ul className="space-y-0.5">
+            {[...visible, ...hidden].map(stat => {
+              const Icon = stat.icon;
+              const checked = header.stats.includes(stat.id);
+              const index = header.stats.indexOf(stat.id);
+              const inputId = `banner-stat-${stat.id}`;
+              return (
+                <li
+                  key={stat.id}
+                  className="flex items-start gap-2.5 rounded-lg px-1 py-1.5 hover:bg-accent/60"
+                >
+                  <Checkbox
+                    id={inputId}
+                    checked={checked}
+                    onCheckedChange={value =>
+                      onChange(l =>
+                        toggleHeaderStat(l, spec, stat.id, value === true)
+                      )
+                    }
+                    className="mt-0.5"
+                  />
+                  <Icon
+                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <label htmlFor={inputId} className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">
+                      {stat.label}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {stat.description}
+                    </span>
+                  </label>
+                  {checked ? (
+                    <span className="flex shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        disabled={index <= 0}
+                        onClick={() =>
+                          onChange(l => nudgeHeaderStat(l, stat.id, -1))
+                        }
+                        aria-label={`Move ${stat.label} earlier`}
+                      >
+                        <ArrowUp className="size-3.5" aria-hidden="true" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        disabled={index >= header.stats.length - 1}
+                        onClick={() =>
+                          onChange(l => nudgeHeaderStat(l, stat.id, 1))
+                        }
+                        aria-label={`Move ${stat.label} later`}
+                      >
+                        <ArrowDown className="size-3.5" aria-hidden="true" />
+                      </Button>
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </fieldset>
       </PopoverContent>
     </Popover>
   );
@@ -398,6 +599,13 @@ export function LayoutEditorBar() {
             layout={layout}
             onChange={onChange}
           />
+          {activeSpec.header && layout.header ? (
+            <BannerPopover
+              spec={activeSpec}
+              header={layout.header}
+              onChange={onChange}
+            />
+          ) : null}
 
           <span
             className="hidden h-6 w-px bg-white/15 sm:block"
