@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Check, Maximize2, Radio, Sparkles, X } from 'lucide-react';
+import {
+  Check,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Maximize2,
+  Radio,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useConsole } from '@/context/consoleContext';
 import { useNow } from '@/hooks/useNow';
@@ -21,12 +29,9 @@ function useRemaining(work: WorkItem, timeout: number) {
   return Math.max(0, timeout - (now - offeredAt) / 1000);
 }
 
-function OfferCard({ work, timeout }: { work: WorkItem; timeout: number }) {
+function useOfferActions(work: WorkItem) {
   const { acceptWork, declineWork } = useConsole();
-  const remaining = useRemaining(work, timeout);
   const [pending, setPending] = useState<'accept' | 'decline' | null>(null);
-  const meta = CHANNEL_META[work.channel];
-
   const act = async (kind: 'accept' | 'decline') => {
     setPending(kind);
     try {
@@ -35,6 +40,67 @@ function OfferCard({ work, timeout }: { work: WorkItem; timeout: number }) {
       setPending(null);
     }
   };
+  return { pending, act };
+}
+
+function OfferRow({ work, timeout }: { work: WorkItem; timeout: number }) {
+  const remaining = useRemaining(work, timeout);
+  const { pending, act } = useOfferActions(work);
+  const meta = CHANNEL_META[work.channel];
+  const customer = work.customerName ?? 'Customer';
+  return (
+    <article
+      className="ink-panel pointer-events-auto flex items-center gap-2.5 overflow-hidden rounded-r-xl py-2 pr-2 pl-3 shadow-xl ring-1 ring-white/10"
+      aria-label={`Incoming ${meta.label} work from ${customer}`}
+      title={work.subject ?? undefined}
+    >
+      <ChannelIcon channel={work.channel} solid className="size-7 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm leading-tight font-semibold">
+          {customer}
+        </p>
+        <p className="truncate text-[11px] text-white/60">
+          {work.caseNumber ? `#${work.caseNumber} · ` : ''}
+          {work.subject}
+        </p>
+      </div>
+      <span
+        className={cn(
+          'w-7 shrink-0 text-right font-mono text-xs tabular-nums',
+          remaining < timeout * 0.3 ? 'text-negative' : 'text-white/70'
+        )}
+        aria-label={`${Math.ceil(remaining)} seconds left`}
+      >
+        {Math.ceil(remaining)}s
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0 text-white/70 hover:bg-white/10 hover:text-white"
+        disabled={pending !== null}
+        onClick={() => void act('decline')}
+        aria-label={`Decline work from ${customer}`}
+        title="Decline"
+      >
+        <X className="size-4" aria-hidden="true" />
+      </Button>
+      <Button
+        size="sm"
+        className={cn('h-8 shrink-0 font-semibold text-white hover:opacity-90', meta.bg)}
+        disabled={pending !== null}
+        onClick={() => void act('accept')}
+      >
+        <Check className="size-3.5" aria-hidden="true" />{' '}
+        {pending === 'accept' ? '…' : 'Accept'}
+      </Button>
+    </article>
+  );
+}
+
+function OfferCard({ work, timeout }: { work: WorkItem; timeout: number }) {
+  const remaining = useRemaining(work, timeout);
+  const { pending, act } = useOfferActions(work);
+  const meta = CHANNEL_META[work.channel];
 
   return (
     <article
@@ -150,31 +216,44 @@ function useOfferTitle(count: number) {
 }
 
 export function OfferStack() {
-  const { omni } = useConsole();
+  const { omni, offersMinimized, setOffersMinimized } = useConsole();
   const offers = omni?.offers ?? [];
+  const timeout = omni?.offerTimeoutSeconds ?? 30;
   useOfferTitle(offers.length);
+  const ToggleIcon = offersMinimized ? ChevronsUpDown : ChevronsDownUp;
   return (
     <section
       className={cn(
-        'pointer-events-none fixed top-3 bottom-3 left-16 z-50 flex w-[23rem] flex-col gap-3 overflow-y-auto pr-3',
+        'pointer-events-none fixed top-3 bottom-3 left-16 z-50 flex flex-col overflow-y-auto pr-3',
+        offersMinimized ? 'w-[21rem] gap-1.5' : 'w-[23rem] gap-3',
         offers.length === 0 && 'hidden'
       )}
       aria-live="assertive"
       aria-label="Routed work"
     >
       {offers.length ? (
-        <p className="ink-panel animate-slide-in-left pointer-events-auto flex w-fit items-center gap-2 rounded-r-full py-1.5 pr-4 pl-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 shadow-lg">
+        <button
+          type="button"
+          onClick={() => setOffersMinimized(!offersMinimized)}
+          aria-expanded={!offersMinimized}
+          title={offersMinimized ? 'Show full offer details' : 'Minimize offers'}
+          className="ink-panel animate-slide-in-left pointer-events-auto flex w-fit items-center gap-2 rounded-r-full py-1.5 pr-3 pl-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 shadow-lg transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"
+        >
           <Radio className="size-3.5 text-voice" aria-hidden="true" />
           Routed to you · {offers.length}
-        </p>
+          <span className="ml-1 flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 tracking-normal normal-case">
+            <ToggleIcon className="size-3.5" aria-hidden="true" />
+            {offersMinimized ? 'Expand' : 'Minimize'}
+          </span>
+        </button>
       ) : null}
-      {offers.map(offer => (
-        <OfferCard
-          key={offer.id}
-          work={offer}
-          timeout={omni?.offerTimeoutSeconds ?? 30}
-        />
-      ))}
+      {offers.map(offer =>
+        offersMinimized ? (
+          <OfferRow key={offer.id} work={offer} timeout={timeout} />
+        ) : (
+          <OfferCard key={offer.id} work={offer} timeout={timeout} />
+        )
+      )}
     </section>
   );
 }

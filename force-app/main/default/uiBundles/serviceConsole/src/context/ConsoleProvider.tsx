@@ -31,6 +31,7 @@ import {
 
 const OMNI_POLL_MS = 4000;
 const TAB_STORAGE_KEY = 'slk-console-tabs';
+const OFFERS_MINIMIZED_KEY = 'slk-console-offers-minimized';
 
 function tabFor(pathname: string): WorkspaceTab {
   const [, first] = pathname.split('/');
@@ -79,6 +80,13 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   const [clockSkew, setClockSkew] = useState(0);
   const [tabs, setTabs] = useState<WorkspaceTab[]>(loadTabs);
   const [omniOpen, setOmniOpen] = useState(false);
+  const [offersMinimized, setOffersMinimizedState] = useState(
+    () => sessionStorage.getItem(OFFERS_MINIMIZED_KEY) === 'true'
+  );
+  const setOffersMinimized = useCallback((minimized: boolean) => {
+    setOffersMinimizedState(minimized);
+    sessionStorage.setItem(OFFERS_MINIMIZED_KEY, String(minimized));
+  }, []);
   const syncing = useRef(false);
   const lastWhisperAt = useRef<string | null | undefined>(undefined);
   const seenOffers = useRef<Set<string> | null>(null);
@@ -248,6 +256,8 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
       closeTab,
       omniOpen,
       setOmniOpen,
+      offersMinimized,
+      setOffersMinimized,
     }),
     [
       me,
@@ -263,6 +273,8 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
       setTabLabel,
       closeTab,
       omniOpen,
+      offersMinimized,
+      setOffersMinimized,
     ]
   );
 

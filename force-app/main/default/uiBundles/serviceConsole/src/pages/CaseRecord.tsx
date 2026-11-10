@@ -1,25 +1,24 @@
-import { useCallback, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router';
-import { AlertOctagon, ArrowRight, FileText, UserRoundCog } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useCallback, useRef, useState } from 'react';
+import { useLocation, useParams } from 'react-router';
+import { FileText, UserRoundCog } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import {
-  consoleApi,
-  PRIORITIES,
-  type CaseStatus,
-} from '@/api/console/consoleApi';
+import { consoleApi, type CaseStatus } from '@/api/console/consoleApi';
 import { getCaseDetail, updateCase } from '@/api/console/recordService';
 import { useConsole, useTabTitle } from '@/context/consoleContext';
+import { useLayout } from '@/context/layoutContext';
 import { useResource } from '@/hooks/useResource';
+import {
+  STICKY_BAR_TOP,
+  scrollToTop,
+  useScrolledPast,
+} from '@/hooks/useScrolledPast';
+import {
+  CaseHeaderActions,
+  CompactCaseBar,
+  EscalatedBadge,
+  LiveWorkLink,
+} from '@/components/case/CaseHeader';
 import { formatDateTime, relativeTime, workPath } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import { CASE_LAYOUT } from '@/layout/pageSpecs';
 import { LayoutCanvas } from '@/components/layout/LayoutCanvas';
 import { CaseSummaryCard } from '@/components/ai/CaseSummaryCard';
@@ -40,7 +39,6 @@ import {
   RelatedCases,
 } from '@/components/case/CustomerPanel';
 import {
-  CHANNEL_META,
   ErrorNote,
   FieldRow,
   Panel,
@@ -59,7 +57,10 @@ export default function CaseRecord() {
     30000
   );
   const [saving, setSaving] = useState(false);
+  const { editing } = useLayout();
+  const headerRef = useRef<HTMLElement>(null);
   const data = record.data;
+  const scrolledPast = useScrolledPast(headerRef, data !== null && !editing);
   const { refresh } = record;
 
   useTabTitle(
@@ -108,6 +109,11 @@ export default function CaseRecord() {
     }
   };
 
+  const setPriority = (priority: string) =>
+    void save({ Priority: priority }, `Priority set to ${priority}`);
+  const setStatus = (status: CaseStatus) =>
+    void save({ Status: status }, `Status set to ${status}`);
+
   const onChanged = useCallback(() => void refresh(), [refresh]);
 
   if (!record.loading && !data && !record.error) {
@@ -116,7 +122,10 @@ export default function CaseRecord() {
 
   return (
     <div className="space-y-5">
-      <section className="animate-rise rounded-2xl border bg-card p-5 lg:p-6">
+      <section
+        ref={headerRef}
+        className="animate-rise rounded-2xl border bg-card p-5 lg:p-6"
+      >
         {record.error ? (
           <ErrorNote message={record.error} onRetry={() => void refresh()} />
         ) : null}
@@ -143,93 +152,50 @@ export default function CaseRecord() {
                 </h1>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <PriorityBadge priority={data.priority} />
-                  {data.isEscalated ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-negative/10 px-2 py-0.5 text-[11px] font-semibold text-negative">
-                      <AlertOctagon className="size-3" aria-hidden="true" />{' '}
-                      Escalated
-                    </span>
-                  ) : null}
+                  {data.isEscalated ? <EscalatedBadge /> : null}
                   {data.contact ? (
                     <span className="text-sm text-muted-foreground">
                       for {data.contact.name}
                     </span>
                   ) : null}
                   {liveWork && livePath ? (
-                    <Link
-                      to={livePath}
-                      className={cn(
-                        'group inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
-                        CHANNEL_META[liveWork.channel].soft,
-                        CHANNEL_META[liveWork.channel].text
-                      )}
-                      title={`Open the live ${CHANNEL_META[liveWork.channel].label.toLowerCase()} with ${liveWork.customerName ?? 'the customer'}`}
-                    >
-                      <span
-                        className="relative flex size-1.5"
-                        aria-hidden="true"
-                      >
-                        <span
-                          className={cn(
-                            'absolute inset-0 animate-ping rounded-full opacity-60',
-                            CHANNEL_META[liveWork.channel].bg
-                          )}
-                        />
-                        <span
-                          className={cn(
-                            'relative size-1.5 rounded-full',
-                            CHANNEL_META[liveWork.channel].bg
-                          )}
-                        />
-                      </span>
-                      Live {CHANNEL_META[liveWork.channel].label.toLowerCase()}
-                      <ArrowRight
-                        className="size-3 transition-transform group-hover:translate-x-0.5"
-                        aria-hidden="true"
-                      />
-                    </Link>
+                    <LiveWorkLink work={liveWork} path={livePath} />
                   ) : null}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  value={data.priority || 'Medium'}
-                  onValueChange={value =>
-                    void save({ Priority: value }, `Priority set to ${value}`)
-                  }
-                  disabled={saving}
-                >
-                  <SelectTrigger className="w-36" aria-label="Priority">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORITIES.map(p => (
-                      <SelectItem key={p} value={p}>
-                        {p} priority
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  disabled={saving || data.isEscalated || data.isClosed}
-                  onClick={() => void escalate()}
-                >
-                  <AlertOctagon className="size-4" aria-hidden="true" />{' '}
-                  Escalate
-                </Button>
+                <CaseHeaderActions
+                  data={data}
+                  saving={saving}
+                  onPriority={setPriority}
+                  onEscalate={() => void escalate()}
+                />
               </div>
             </div>
 
             <StatusPath
               status={data.status}
               disabled={saving}
-              onSelect={(status: CaseStatus) =>
-                void save({ Status: status }, `Status set to ${status}`)
-              }
+              onSelect={setStatus}
             />
           </div>
         )}
       </section>
+      <div className="sticky z-10 mb-0 h-0" style={{ top: STICKY_BAR_TOP }}>
+        {data && scrolledPast ? (
+          <CompactCaseBar
+            className="animate-rise absolute inset-x-0 top-0"
+            data={data}
+            saving={saving}
+            onPriority={setPriority}
+            onEscalate={() => void escalate()}
+            onStatus={setStatus}
+            liveWork={liveWork}
+            livePath={livePath}
+            onExpand={scrollToTop}
+          />
+        ) : null}
+      </div>
 
       {data ? (
         <LayoutCanvas

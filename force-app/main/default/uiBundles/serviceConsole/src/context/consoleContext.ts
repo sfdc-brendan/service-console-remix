@@ -25,6 +25,9 @@ export interface ConsoleContextValue {
   closeTab: (path: string) => void;
   omniOpen: boolean;
   setOmniOpen: (open: boolean) => void;
+  /** Routed-work offers show as one slim row each instead of full cards. */
+  offersMinimized: boolean;
+  setOffersMinimized: (minimized: boolean) => void;
 }
 
 export const ConsoleContext = createContext<ConsoleContextValue | null>(null);

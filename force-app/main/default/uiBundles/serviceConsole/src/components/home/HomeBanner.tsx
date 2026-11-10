@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FocusList, HomeStats } from '@/api/console/consoleApi';
 import { useConsole } from '@/context/consoleContext';
 import { useLayout } from '@/context/layoutContext';
+import {
+  STICKY_BAR_TOP,
+  scrollToTop,
+  useScrolledPast,
+} from '@/hooks/useScrolledPast';
 import { HEADER_STATES, type HeaderState } from '@/layout/layoutModel';
 import { HOME_LAYOUT } from '@/layout/pageSpecs';
 import { CompactBar } from './CompactBar';
 import { FullBanner } from './FullBanner';
 import { useHomeBannerData } from './useHomeBannerData';
-
-const STICKY_TOP = 'calc(var(--console-header-h, 3.25rem) + 0.5rem)';
 
 function readPin(key: string | null): HeaderState | null {
   if (!key) {
@@ -34,13 +37,6 @@ function writePin(key: string, state: HeaderState | null) {
   }
 }
 
-function headerOffset(): number {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(
-    '--console-header-h'
-  );
-  return Number.parseFloat(value) || 0;
-}
-
 /**
  * Home's page header. Shows the full banner or the compact bar per the admin default and the
  * user's own pin (the pin wins), and floats the compact bar once the full banner scrolls away.
@@ -61,37 +57,13 @@ export function HomeBanner({
   const [sessionPin, setSessionPin] = useState<HeaderState | null>();
   const pinned = sessionPin === undefined ? readPin(pinKey) : sessionPin;
   const bannerRef = useRef<HTMLElement>(null);
-  const [scrolledPast, setScrolledPast] = useState(false);
 
   const state: HeaderState =
     editing || !pinned ? (header?.defaultState ?? 'expanded') : pinned;
-  const watchScroll =
-    state === 'expanded' && header?.autoCollapse === true && !editing;
-
-  useEffect(() => {
-    const banner = bannerRef.current;
-    if (!watchScroll || !banner) {
-      return;
-    }
-    let frame = 0;
-    const check = () => {
-      frame = 0;
-      setScrolledPast(banner.getBoundingClientRect().bottom <= headerOffset());
-    };
-    const schedule = () => {
-      if (!frame) {
-        frame = requestAnimationFrame(check);
-      }
-    };
-    schedule();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-    };
-  }, [watchScroll]);
+  const scrolledPast = useScrolledPast(
+    bannerRef,
+    state === 'expanded' && header?.autoCollapse === true && !editing
+  );
 
   if (!header) {
     return null;
@@ -107,7 +79,7 @@ export function HomeBanner({
 
   if (state === 'compact') {
     return (
-      <div className="sticky z-10" style={{ top: STICKY_TOP }}>
+      <div className="sticky z-10" style={{ top: STICKY_BAR_TOP }}>
         <CompactBar
           data={data}
           header={header}
@@ -126,23 +98,15 @@ export function HomeBanner({
         header={header}
         onCollapse={() => pin('compact')}
       />
-      <div className="sticky z-10 mb-0 h-0" style={{ top: STICKY_TOP }}>
-        {watchScroll && scrolledPast ? (
+      <div className="sticky z-10 mb-0 h-0" style={{ top: STICKY_BAR_TOP }}>
+        {scrolledPast ? (
           <CompactBar
             floating
             data={data}
             header={header}
             className="animate-rise absolute inset-x-0 top-0"
             expandLabel="Show the full banner"
-            onExpand={() =>
-              window.scrollTo({
-                top: 0,
-                behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
-                  .matches
-                  ? 'auto'
-                  : 'smooth',
-              })
-            }
+            onExpand={scrollToTop}
           />
         ) : null}
       </div>
