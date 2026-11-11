@@ -22,6 +22,23 @@ usage() {
 
 # Prints the payload of USER_DEBUG lines tagged <tag>:: (the run output also echoes the script source).
 debug_lines() { grep 'USER_DEBUG' | grep -o "$1::.*" | sed "s/^$1:://" || true; }
+# Runs a deploy. Outside an interactive terminal (an IDE agent, CI) the CLI repeats its progress spinner
+# hundreds of times, so the full output goes to a log file and only the outcome is printed.
+run_deploy() {
+  if [[ -t 1 ]]; then
+    "$@"
+    return
+  fi
+  local log
+  log="$(mktemp "${TMPDIR:-/tmp}/slk-deploy.XXXXXX")"
+  if "$@" >"$log" 2>&1; then
+    grep -E 'Successfully|Deploy ID|Passing|Failing' "$log" | sort -u | sed 's/^ */  /'
+  else
+    grep -vE 'Deploying Metadata|Waiting for the org|Preparing|Running Tests|Updating Source|Status:|\[2K|^[[:space:]]*$' "$log" | tail -80
+    fail "The deploy failed and Salesforce rolled it back. Full log: $log"
+  fi
+}
+
 step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 fail() { printf '\n\033[31mInstall stopped:\033[0m %s\n' "$1" >&2; exit 1; }
 
@@ -72,13 +89,13 @@ fi
 
 if $VALIDATE_ONLY; then
   step "Validating the deployment (nothing is saved to the org)"
-  sf project deploy validate -o "$ORG" -d force-app --test-level RunSpecifiedTests --tests "${TESTS[@]}" --wait 60 --concise
+  run_deploy sf project deploy validate -o "$ORG" -d force-app --test-level RunSpecifiedTests --tests "${TESTS[@]}" --wait 60 --concise
   printf '\n\033[32mValidation passed.\033[0m Rerun without --validate-only to install.\n'
   exit 0
 fi
 
 step "Deploying metadata and running the app's Apex tests"
-sf project deploy start -o "$ORG" -d force-app --test-level RunSpecifiedTests --tests "${TESTS[@]}" --wait 60 --concise
+run_deploy sf project deploy start -o "$ORG" -d force-app --test-level RunSpecifiedTests --tests "${TESTS[@]}" --wait 60 --concise
 
 step "Assigning permission sets to $USERNAME"
 for permset in "${PERMSETS[@]}"; do
