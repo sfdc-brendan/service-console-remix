@@ -124,5 +124,9 @@ $out"
 fi
 
 printf '\n\033[32mService Console Remix is installed.\033[0m\n'
-echo "Open it with: sf org open -o $ORG -p lightning/app/c__serviceConsole"
-echo "(or App Launcher > Service Console Remix)"
+echo "Open it: run 'sf org open -o $ORG', then App Launcher > Service Console Remix."
+INSTANCE="$(sf org display -o "$ORG" --json 2>/dev/null | grep -m1 '"instanceUrl"' | sed 's/.*"instanceUrl": *"\([^"]*\)".*/\1/')"
+APP_URL="$(sed -nE 's#^https://([^.]+)\.(.+\.)?my\.salesforce\.com/?$#https://\1--c.\2my.salesforce.app/app/c__serviceConsole#p' <<< "$INSTANCE")"
+if [[ -n "$APP_URL" ]]; then
+  echo "Once you're logged in, it also opens directly at: $APP_URL"
+fi

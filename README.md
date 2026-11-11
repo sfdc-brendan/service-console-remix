@@ -14,7 +14,7 @@ A reimagined Salesforce service console built as a React UI bundle that runs ins
    - **Cursor:** run `/deploy-to-sdo` in the chat, or just say "deploy this to my SDO".
    - **Claude Code:** run `/deploy-to-sdo` (optionally with an org alias, like `/deploy-to-sdo my-sdo`), or say "deploy this to my SDO".
 
-The agent checks your tools, has you log in to your SDO in the browser, runs a preflight check on the org, deploys, assigns permissions, seeds demo data, and opens the app. Its instructions are in [AGENTS.md](AGENTS.md).
+The agent checks your tools, has you log in to your SDO in the browser, runs a preflight check on the org, deploys, assigns permissions, and seeds demo data. Then open your org and pick **Service Console Remix** from the App Launcher. Its instructions are in [AGENTS.md](AGENTS.md).
 
 You need the [Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli), Node.js 20+ (the agent builds the UI from source), and a System Administrator login to an SDO.
 

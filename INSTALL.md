@@ -34,7 +34,7 @@ Installing takes about 10 minutes, most of it the Apex test run.
 
    `--route-all-cases-to-me` sends every new case to you while you're Online in the console, regardless of skills. Leave it off to let skills-based routing spread work across the virtual agents.
 
-5. Open the app with `sf org open -o my-sdo -p lightning/app/c__serviceConsole`, or from **App Launcher > Service Console Remix**.
+5. Open your org with `sf org open -o my-sdo`, then go to **App Launcher > Service Console Remix**. The console opens in a new tab; the installer's last line also prints its direct link.
 
 ### What the installer does
 

@@ -62,11 +62,13 @@ Other flags: `--validate-only` does a full check-only deploy and saves nothing (
 
 ### 6. Finish
 
-Open the app and tell the user what was installed and what to do first:
+Open the org and tell the user what was installed and what to do first:
 
 ```bash
-sf org open -o <alias> -p lightning/app/c__serviceConsole
+sf org open -o <alias>
 ```
+
+The app opens from **App Launcher > Service Console Remix**, in a new tab on the org's `*.my.salesforce.app` domain. The installer's last line prints that direct URL; share it too. Don't send users to `lightning/app/c__serviceConsole`: that opens an empty Lightning app shell, not the console.
 
 In the console, they set themselves **Online** in the Omni dock so routing offers them work. Other users need the `SLK_Service_Console` permission set (`sf org assign permset -o <alias> -n SLK_Service_Console -b <username>`), plus `SLK_Service_Console_Admin` to customize page layouts.
 
