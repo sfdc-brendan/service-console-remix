@@ -331,4 +331,26 @@ private class SLK_CommandCenterTest {
         }
         System.assert(threw);
     }
+
+    @IsTest
+    static void modelsApiRequestAndEmptyResponse() {
+        aiplatform.ModelsAPI.createChatGenerations_Request request = SLK_AIService.buildRequest('sys', 'user');
+        System.assertEquals(SLK_AIService.MODEL_NAME, request.modelName);
+        System.assertEquals(2, request.body.messages.size());
+        System.assertEquals('system', request.body.messages[0].role);
+        System.assertEquals('user', request.body.messages[1].content);
+
+        for (aiplatform.ModelsAPI.createChatGenerations_Response response : new List<aiplatform.ModelsAPI.createChatGenerations_Response>{
+            null,
+            new aiplatform.ModelsAPI.createChatGenerations_Response()
+        }) {
+            Boolean threw = false;
+            try {
+                SLK_AIService.firstGeneration(response);
+            } catch (SLK_AIService.AIException e) {
+                threw = true;
+            }
+            System.assert(threw, 'An empty Models API response should raise an AIException');
+        }
+    }
 }

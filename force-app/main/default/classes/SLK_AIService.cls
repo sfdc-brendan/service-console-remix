@@ -20,6 +20,17 @@ public with sharing class SLK_AIService {
             return mockResponses.remove(0);
         }
 
+        aiplatform.ModelsAPI.createChatGenerations_Response response;
+        try {
+            response = new aiplatform.ModelsAPI().createChatGenerations(buildRequest(systemPrompt, userPrompt));
+        } catch (Exception e) {
+            throw new AIException('Models API error: ' + e.getMessage());
+        }
+        return firstGeneration(response);
+    }
+
+    @TestVisible
+    private static aiplatform.ModelsAPI.createChatGenerations_Request buildRequest(String systemPrompt, String userPrompt) {
         aiplatform.ModelsAPI_ChatMessageRequest systemMessage = new aiplatform.ModelsAPI_ChatMessageRequest();
         systemMessage.role = 'system';
         systemMessage.content = systemPrompt;
@@ -34,14 +45,11 @@ public with sharing class SLK_AIService {
         aiplatform.ModelsAPI.createChatGenerations_Request request = new aiplatform.ModelsAPI.createChatGenerations_Request();
         request.modelName = MODEL_NAME;
         request.body = body;
+        return request;
+    }
 
-        aiplatform.ModelsAPI.createChatGenerations_Response response;
-        try {
-            response = new aiplatform.ModelsAPI().createChatGenerations(request);
-        } catch (Exception e) {
-            throw new AIException('Models API error: ' + e.getMessage());
-        }
-
+    @TestVisible
+    private static String firstGeneration(aiplatform.ModelsAPI.createChatGenerations_Response response) {
         if (
             response?.Code200?.generationDetails?.generations == null ||
             response.Code200.generationDetails.generations.isEmpty()

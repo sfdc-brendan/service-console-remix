@@ -50,3 +50,6 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Release kits built by scripts/install/package-release.sh
+releases/
